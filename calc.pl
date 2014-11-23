@@ -1,15 +1,14 @@
 #!/usr/bin/perl
 
-use strict;
-use warnings;
+use Term::ReadLine;
 
-while (defined (my $cal = <STDIN>)) {
-    chomp $cal;
-    last unless length $cal;
-
-    my $res = eval qq{$cal};
-
-    print "$cal := $res\n" if $res;
-
-    print $@ if $@;
+my $term = Term::ReadLine->new('Simple Perl calc');
+my $prompt = "calc> ";
+my $OUT = $term->OUT || \*STDOUT;
+while ( defined ($_ = $term->readline($prompt)) ) {
+  my $res = eval($_);
+  warn $@ if $@;
+  print $OUT $res, "\n" unless $@;
+  $term->addhistory($_) if /\S/;
 }
+print "\n";
