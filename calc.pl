@@ -3,14 +3,13 @@
 use strict;
 use warnings;
 
-my $cal = join ' ', @ARGV;
+while (defined (my $cal = <STDIN>)) {
+    chomp $cal;
+    last unless length $cal;
 
-exit unless length $cal;
+    my $res = eval qq{$cal};
 
-my $res = eval qq{$cal};
+    print "$cal := $res\n" if $res;
 
-print "$cal := $res\n";
-
-print $@ if $@;
-
-exit;
+    print $@ if $@;
+}
