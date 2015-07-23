@@ -1,8 +1,3 @@
-#!/usr/bin/perl
-
-use strict;
-use warnings;
-
 =head1 NAME
 
 calc.pl - Simple perl REPL calculator
@@ -31,30 +26,14 @@ homebrew instal some temporary symlinks.
     root> exit
     dave> brew unlink readline
 
+
 =cut
-
-use Term::ReadLine;
-
-my $pi = 3.1415926;
-my $term = Term::ReadLine->new('Simple Perl calc');
-my $prompt = "calc> ";
-my $OUT = $term->OUT || \*STDOUT;
-while ( defined ($_ = $term->readline($prompt)) ) {
-  $_ =~ s{\bpi\b}{$pi}ixms;
-  my $res = eval($_);
-  warn $@ if $@;
-  print $OUT $res, "\n" unless $@;
-  $term->addhistory($_) if /\S/;
-}
-print "\n";
-
-exit;
-
-__END__
 
 =head1 LICENSE
 
 This script is free software; you can redistribute it and/or modify it under
 the same terms as perl itself.
 
+
 =cut
+
