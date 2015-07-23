@@ -38,14 +38,22 @@ use Term::ReadLine;
 
 my $pi = 3.1415926;
 my $term = Term::ReadLine->new('Simple Perl calc');
+$term->Attribs->{MinLength} = 0;
 my $prompt = "calc> ";
 my $OUT = $term->OUT || \*STDOUT;
+my $prev_line = '';
+my $prev_res = '';
 while ( defined ($_ = $term->readline($prompt)) ) {
-  $_ =~ s{\bpi\b}{$pi}ixms;
-  my $res = eval($_);
-  warn $@ if $@;
-  print $OUT $res, "\n" unless $@;
-  $term->addhistory($_) if /\S/;
+    my $line = $_;
+    next unless $line =~ m{\S}xms;
+    $line =~ s{\bpi\b}{$pi}gixms;
+    $line =~ s{[@]}{$prev_res}gixms;
+    my $res = eval($line);
+    warn $@ if $@;
+    print $OUT $res, "\n" unless $@;
+    $term->addhistory($line) unless $line eq $prev_line;
+    $prev_line = $line;
+    $prev_res = $res;
 }
 print "\n";
 
