@@ -10,9 +10,10 @@ calc.pl - Simple perl REPL calculator
 =head1 SYNOPSIS
 
     $ calc.pl
-    calc> 2 * pi * 32
-    201.0619264
-    calc> 
+    calc> 2 * pi
+    6.2831852
+    calc> @ * 10
+    62.831852
 
 =head1 DESCRIPTION
 
@@ -38,13 +39,12 @@ use Term::ReadLine;
 
 my $pi = 3.1415926;
 my $term = Term::ReadLine->new('Simple Perl calc');
-$term->Attribs->{MinLength} = 0;
+$term->Attribs->{MinLength} = 0; # Turns off history adding in readline() call.
 my $prompt = "calc> ";
 my $OUT = $term->OUT || \*STDOUT;
 my $prev_line = '';
 my $prev_res = '';
-while ( defined ($_ = $term->readline($prompt)) ) {
-    my $line = $_;
+while ( defined (my $line = $term->readline($prompt)) ) {
     next unless $line =~ m{\S}xms;
     $line =~ s{\bpi\b}{$pi}gixms;
     $line =~ s{[@]}{$prev_res}gixms;

@@ -5,9 +5,10 @@ calc.pl - Simple perl REPL calculator
 =head1 SYNOPSIS
 
     $ calc.pl
-    calc> 2 * pi * 32
-    201.0619264
-    calc> 
+    calc> 2 * pi
+    6.2831852
+    calc> @ * 10
+    62.831852
 
 =head1 DESCRIPTION
 
@@ -18,9 +19,10 @@ following the instructions from
 L<http://blogs.perl.org/users/aristotle/2013/07/easy-osx-termreadlinegnu.html>
 
 Readline is already installed, but the Makefile doesn't pick it up, so make
-homebrew instal some temporary symlinks.
+homebrew install some temporary symlinks.
 
-    dave> brew install --force readline
+    dave> brew install readline
+    dave> brew link --force readline
     dave> sudo su -
     root> cpan Term::ReadLine::GNU
     root> exit
