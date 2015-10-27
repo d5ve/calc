@@ -19,7 +19,7 @@ calc.pl - Simple perl REPL calculator
 
 Based upon the sample code from https://metacpan.org/pod/Term::ReadLine
 
-To get readline working properly on OSX, I installed Term::ReadLine::GNU
+To get readline working properly on OSX, I installed Term::ReadLine::Gnu
 following the instructions from
 L<http://blogs.perl.org/users/aristotle/2013/07/easy-osx-termreadlinegnu.html>
 
@@ -29,7 +29,7 @@ homebrew install some temporary symlinks.
     dave> brew install readline
     dave> brew link --force readline
     dave> sudo su -
-    root> cpan Term::ReadLine::GNU
+    root> cpan Term::ReadLine::Gnu
     root> exit
     dave> brew unlink readline
 
