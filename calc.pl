@@ -44,7 +44,8 @@ my $prompt = "calc> ";
 my $OUT = $term->OUT || \*STDOUT;
 my $prev_line = '';
 my $prev_res = '';
-while ( defined (my $line = $term->readline($prompt)) ) {
+my $line = @ARGV ? join(' ', @ARGV) : $term->readline($prompt);
+while ( defined $line ) {
     next unless $line =~ m{\S}xms;
     $line =~ s{\bpi\b}{$pi}gixms;
     $line =~ s{[@]}{$prev_res}gixms;
@@ -54,6 +55,7 @@ while ( defined (my $line = $term->readline($prompt)) ) {
     $term->addhistory($line) unless $line eq $prev_line;
     $prev_line = $line;
     $prev_res = $res;
+    $line = $term->readline($prompt);
 }
 print "\n";
 
