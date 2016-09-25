@@ -14,6 +14,8 @@ calc.pl - Simple perl REPL calculator
     6.2831852
     calc> @ * 10
     62.831852
+    calc> $5,300.27 * 2.03
+    10759.5481
 
 =head1 DESCRIPTION
 
@@ -37,7 +39,6 @@ homebrew install some temporary symlinks.
 
 use Term::ReadLine;
 
-my $pi = 3.1415926;
 my $term = Term::ReadLine->new('Simple Perl calc');
 $term->Attribs->{MinLength} = 0; # Turns off history adding in readline() call.
 my $prompt = "calc> ";
@@ -46,9 +47,9 @@ my $prev_line = '';
 my $prev_res = '';
 my $line = @ARGV ? join(' ', @ARGV) : $term->readline($prompt);
 while ( defined $line ) {
+    last unless defined $line; # Handle Crtl-d.
     next unless $line =~ m{\S}xms;
-    $line =~ s{\bpi\b}{$pi}gixms;
-    $line =~ s{[@]}{$prev_res}gixms;
+    $line = process_line($line, $prev_line, $prev_res);
     my $res = eval($line);
     warn $@ if $@;
     print $OUT $res, "\n" unless $@;
@@ -60,6 +61,24 @@ while ( defined $line ) {
 print "\n";
 
 exit;
+
+# Apply transforms to the input to make the calc more useful (but less
+# general-purpose).
+sub process_line {
+    my $line      = shift;
+    my $prev_line = shift;
+    my $prev_res  = shift;
+
+    my $pi = 3.1415926;
+    $line =~ s{\bpi\b}{$pi}gixms;
+
+    $line =~ s{[@]}{$prev_res}gixms;
+
+    # Handle currency.
+    $line =~ s{ [£\$,] }{}xmsg;
+
+    return $line;
+}
 
 __END__
 
