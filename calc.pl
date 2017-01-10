@@ -35,12 +35,22 @@ homebrew install some temporary symlinks.
     root> exit
     dave> brew unlink readline
 
+Also needs the non-core File::HomeDir.
+
 =cut
 
+use File::HomeDir;
 use Term::ReadLine;
 
+my $hist_file = File::Spec->catfile(File::HomeDir::home, '.calc_history');
 my $term = Term::ReadLine->new('Simple Perl calc');
+$term->ReadHistory($hist_file);
 $term->Attribs->{MinLength} = 0; # Turns off history adding in readline() call.
+
+# Ensure that we write the history file even when the script dies or is
+# Ctrl-c-d.
+# http://mail.pm.org/pipermail/melbourne-pm/2007-January/002214.html
+$SIG{INT} = $SIG{TERM} = sub { $term->WriteHistory($hist_file); $term->free_line_state; $term->cleanup_after_signal; print "\n"; exit };
 my $prompt = "calc> ";
 my $OUT = $term->OUT || \*STDOUT;
 my $prev_line = '';
@@ -68,8 +78,9 @@ while ( defined $line ) {
     $line = $term->readline($prompt);
 }
 print "\n";
-
+$term->WriteHistory($hist_file);
 exit;
+
 
 # Apply transforms to the input to make the calc more useful (but less
 # general-purpose).
@@ -104,6 +115,7 @@ sub commify {
     s{(?<!\d|\.)(\d{4,})}{my $n = $1; $n=~s/(?<=.)(?=(?:.{3})+$)/,/g; $n; }eg;
     return $_;
 }
+
 __END__
 
 =head1 LICENSE
