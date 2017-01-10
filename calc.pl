@@ -48,22 +48,23 @@ my $prev_res = '';
 my $line = @ARGV ? join(' ', @ARGV) : $term->readline($prompt);
 while ( defined $line ) {
     last unless defined $line; # Handle Crtl-d.
-    next unless $line =~ m{\S}xms;
-    my ($processed, $meta) = process_line($line, $prev_line, $prev_res);
-    my $res = eval($processed);
-    if ( $@ ) {
-        warn $@;
-    }
-    else {
-        if ( $meta->{currency} && $res =~ m{ \A [\d.-]+ \d }xms ) {
-            $res = commify($res);
-            $res =~ s{ (\d) }{$meta->{currency}$1}xms;
+    if ( $line =~ m{\S}xms ) {
+        my ($processed, $meta) = process_line($line, $prev_line, $prev_res);
+        my $res = eval($processed);
+        if ( $@ ) {
+            warn $@;
         }
-        print $OUT $res, "\n";
+        else {
+            if ( $meta->{currency} && $res =~ m{ \A [\d.-]+ \d }xms ) {
+                $res = commify($res);
+                $res =~ s{ (\d) }{$meta->{currency}$1}xms;
+            }
+            print $OUT $res, "\n";
+        }
+        $term->addhistory($line) unless $line eq $prev_line;
+        $prev_line = $line;
+        $prev_res = $res;
     }
-    $term->addhistory($line) unless $line eq $prev_line;
-    $prev_line = $line;
-    $prev_res = $res;
     $line = $term->readline($prompt);
 }
 print "\n";
