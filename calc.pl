@@ -15,7 +15,7 @@ calc.pl - Simple perl REPL calculator
     calc> @ * 10
     62.831852
     calc> $5,300.27 * 2.03
-    10759.5481
+    $10,759.5481
 
 =head1 DESCRIPTION
 
@@ -49,10 +49,18 @@ my $line = @ARGV ? join(' ', @ARGV) : $term->readline($prompt);
 while ( defined $line ) {
     last unless defined $line; # Handle Crtl-d.
     next unless $line =~ m{\S}xms;
-    $line = process_line($line, $prev_line, $prev_res);
-    my $res = eval($line);
-    warn $@ if $@;
-    print $OUT $res, "\n" unless $@;
+    my ($processed, $meta) = process_line($line, $prev_line, $prev_res);
+    my $res = eval($processed);
+    if ( $@ ) {
+        warn $@;
+    }
+    else {
+        if ( $meta->{currency} && $res =~ m{ \A [\d.-]+ \d }xms ) {
+            $res = commify($res);
+            $res =~ s{ (\d) }{$meta->{currency}$1}xms;
+        }
+        print $OUT $res, "\n";
+    }
     $term->addhistory($line) unless $line eq $prev_line;
     $prev_line = $line;
     $prev_res = $res;
@@ -62,24 +70,39 @@ print "\n";
 
 exit;
 
-# Apply transforms to the input to make the calc more useful (but less
+# Apply transforms to the input to make the calc more useful (but less
 # general-purpose).
 sub process_line {
     my $line      = shift;
     my $prev_line = shift;
     my $prev_res  = shift;
 
-    my $pi = 3.1415926;
-    $line =~ s{\bpi\b}{$pi}gixms;
+    my $meta;
 
     $line =~ s{[@]}{$prev_res}gixms;
 
-    # Handle currency.
-    $line =~ s{ [£\$,] }{}xmsg;
+    my $pi = 3.1415926;
+    $line =~ s{\bpi\b}{$pi}gixms;
 
-    return $line;
+    # Handle currency.
+    if ( $line =~ m{ ([£\$]) }xms ) {
+        $meta->{currency} = $1 eq '$' ? '$' : '£';
+    }
+    $line =~ s{ [\$£,] }{}xmsg;
+
+    # Treat x as *.
+    $line =~ s{x}{*}xmsg;
+
+    return ($line, $meta);
 }
 
+# Add thousands separator to numbers.
+# http://www.perlmonks.org/?node_id=2145
+sub commify {
+    local $_ = shift;
+    s{(?<!\d|\.)(\d{4,})}{my $n = $1; $n=~s/(?<=.)(?=(?:.{3})+$)/,/g; $n; }eg;
+    return $_;
+}
 __END__
 
 =head1 LICENSE
