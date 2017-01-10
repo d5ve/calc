@@ -30,6 +30,8 @@ homebrew install some temporary symlinks.
     root> exit
     dave> brew unlink readline
 
+Also needs the non-core File::HomeDir for storing the history file.
+
 
 =cut
 
