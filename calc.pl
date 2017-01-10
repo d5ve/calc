@@ -35,11 +35,12 @@ homebrew install some temporary symlinks.
     root> exit
     dave> brew unlink readline
 
-Also needs the non-core File::HomeDir.
+Also needs the non-core File::HomeDir for storing the history file.
 
 =cut
 
 use File::HomeDir;
+use POSIX ();
 use Term::ReadLine;
 
 my $hist_file = File::Spec->catfile(File::HomeDir::home, '.calc_history');
@@ -47,21 +48,24 @@ my $term = Term::ReadLine->new('Simple Perl calc');
 $term->ReadHistory($hist_file);
 $term->Attribs->{MinLength} = 0; # Turns off history adding in readline() call.
 
-# Ensure that we write the history file even when the script dies or is
-# Ctrl-c-d.
-# http://mail.pm.org/pipermail/melbourne-pm/2007-January/002214.html
-$SIG{INT} = $SIG{TERM} = sub { $term->WriteHistory($hist_file); $term->free_line_state; $term->cleanup_after_signal; print "\n"; exit };
+# Ensure that we write the history file even if the script dies or after Ctrl-c.
+# See read_line() below for info about the signal work needed.
+$SIG{INT} = $SIG{TERM} = $SIG{HUP} = sub { exit };
+
 my $prompt = "calc> ";
 my $OUT = $term->OUT || \*STDOUT;
 my $prev_line = '';
+if ( my @hist = $term->history_list() ) {
+    $prev_line = $hist[-1];
+}
 my $prev_res = '';
-my $line = @ARGV ? join(' ', @ARGV) : $term->readline($prompt);
+my $line = @ARGV ? join(' ', @ARGV) : read_line($prompt);
 while ( defined $line ) {
-    last unless defined $line; # Handle Crtl-d.
+    last unless defined $line;    # Handle Crtl-d.
     if ( $line =~ m{\S}xms ) {
-        my ($processed, $meta) = process_line($line, $prev_line, $prev_res);
+        my ( $processed, $meta ) = process_line( $line, $prev_line, $prev_res );
         my $res = eval($processed);
-        if ( $@ ) {
+        if ($@) {
             warn $@;
         }
         else {
@@ -73,13 +77,50 @@ while ( defined $line ) {
         }
         $term->addhistory($line) unless $line eq $prev_line;
         $prev_line = $line;
-        $prev_res = $res;
+        $prev_res  = $res;
     }
-    $line = $term->readline($prompt);
+    $line = read_line($prompt);
 }
-print "\n";
-$term->WriteHistory($hist_file);
 exit;
+
+END {
+    $term->WriteHistory($hist_file);
+    print "\n";
+}
+
+#
+# Subroutines.
+#
+
+# Wrapper around readline() to allow signals to work without needing to hit enter.
+# http://mail.pm.org/pipermail/melbourne-pm/2007-January/002214.html
+sub read_line {
+    my $prompt = shift;
+
+    sub unsafe_signals {
+        $term->free_line_state; # Just give readline a chance to cleanup after itself.
+        $term->cleanup_after_signal;
+        exit;
+    }
+
+    my $sigset     = POSIX::SigSet->new();
+    my $sigaction  = POSIX::SigAction->new( \&unsafe_signals, $sigset, 0 );
+    my $old_action = POSIX::SigAction->new;
+
+    # Set up our unsafe signal handler.
+    POSIX::sigaction( &POSIX::SIGINT, $sigaction, $old_action );    # Save the default one.
+    POSIX::sigaction( &POSIX::SIGHUP, $sigaction );
+    POSIX::sigaction( &POSIX::SIGTERM, $sigaction );
+
+    my $line = $term->readline($prompt);
+
+    # Restore the real signal handler.
+    POSIX::sigaction( &POSIX::SIGINT,  $old_action );
+    POSIX::sigaction( &POSIX::SIGHUP,  $old_action );
+    POSIX::sigaction( &POSIX::SIGTERM, $old_action );
+
+    return $line;
+}
 
 
 # Apply transforms to the input to make the calc more useful (but less
@@ -98,7 +139,7 @@ sub process_line {
 
     # Handle currency.
     if ( $line =~ m{ ([£\$]) }xms ) {
-        $meta->{currency} = $1 eq '$' ? '$' : '£';
+        $meta->{currency} = $1 eq '$' ? '$' : '£'; # Something was weird if I just set it to $1 here. Unicode!
     }
     $line =~ s{ [\$£,] }{}xmsg;
 
