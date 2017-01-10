@@ -10,7 +10,7 @@ calc.pl - Simple perl REPL calculator
     calc> @ * 10
     62.831852
     calc> $5,300.27 * 2.03
-    10759.5481
+    $10,759.5481
 
 =head1 DESCRIPTION
 
