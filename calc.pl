@@ -73,6 +73,9 @@ while ( defined $line ) {
                 $res = commify($res);
                 $res =~ s{ (\d) }{$meta->{currency}$1}xms;
             }
+            elsif ( $meta->{commas} ) {
+                $res = commify($res);
+            }
             print $OUT $res, "\n";
         }
         $term->addhistory($line) unless $line eq $prev_line;
@@ -140,6 +143,10 @@ sub process_line {
     # Handle currency.
     if ( $line =~ m{ ([£\$]) }xms ) {
         $meta->{currency} = $1 eq '$' ? '$' : '£'; # Something was weird if I just set it to $1 here. Unicode!
+    }
+    elsif ( $line =~ m{\d,\d}xms ) {
+        # Track that there was a comma-separated number.
+        $meta->{commas} = 1;
     }
     $line =~ s{ [\$£,] }{}xmsg;
 
