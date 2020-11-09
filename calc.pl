@@ -16,6 +16,8 @@ calc.pl - Simple perl REPL calculator
     62.831852
     calc> $5,300.27 * 2.03
     $10,759.5481
+    calc> $120 + GST
+    $138
 
 =head1 DESCRIPTION
 
@@ -139,6 +141,11 @@ sub process_line {
 
     my $pi = 3.1415926;
     $line =~ s{\bpi\b}{$pi}gixms;
+
+    # Try to handle GST (currently 15%)
+    my $GST = 1.15;
+    $line =~ s{ \+ \s* GST\b }{* $GST}gxms;
+    $line =~ s{ \bGST\b }{$GST}gxms;
 
     # Handle currency.
     if ( $line =~ m{ ([£\$]) }xms ) {
